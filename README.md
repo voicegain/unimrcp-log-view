@@ -44,19 +44,18 @@ cd mrcp-log-analyzer
 
 #### Option 1: Using the Build Script (Recommended)
 
-**If you are inside the project directory:**
-```bash
-cd /path/to/MRCP\ Log\ Analyzer
-python3 build_report.py "/path/to/your_log_file.log"
-```
+# absolute path example
+python3 /full/path/to/unimrcp-log-view/build_report.py "/path/to/logfile.csv"
 
-**If you are outside the project directory:**
-```bash
-python3 /full/path/to/MRCP\ Log\ Analyzer/build_report.py "/path/to/your_log_file.log"
+# or, if you’re already inside the repo
+cd /full/path/to/unimrcp-log-view
+python3 build_report.py "/path/to/logfile.csv"
 ```
 
 - Output files (`summary.json`, `report.html`) will be created in your current working directory unless otherwise specified.
 - For best results, it is recommended to run the script from within the project directory.
+# Then open http://localhost:8000/report.html in your browser
+
 
 #### Option 2: Using Make (Even Easier)
 
