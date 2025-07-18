@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniMRCP Log Analysis Report</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        .sessions {
+            padding: 30px;
+        }
+        .session {
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .session-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .session-header:hover {
+            background: #e9ecef;
+        }
+        .session-title {
+            font-weight: 600;
+            color: #495057;
+        }
+        .session-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        .status-complete {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-incomplete {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-nomrcp {
+            background: #e3f0fb;
+            color: #1565c0;
+        }
+        .session-content {
+            padding: 20px;
+            display: none;
+        }
+        .session-content.active {
+            display: block;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #667eea;
+        }
+        .message {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .message-header {
+            background: #e9ecef;
+            padding: 10px 15px;
+            font-weight: 500;
+            color: #495057;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .message-header:hover {
+            background: #dee2e6;
+        }
+        .message-content {
+            padding: 15px;
+            display: none;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+        .message-content.active {
+            display: block;
+        }
+        .timestamp {
+            color: #6c757d;
+            font-size: 0.85em;
+        }
+        .method {
+            font-weight: 600;
+            color: #495057;
+        }
+        .direction {
+            color: #6c757d;
+            font-size: 0.85em;
+        }
+        .nlsml-content {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            white-space: pre-wrap;
+        }
+        .recognized-text {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        .grammar-def {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            white-space: pre-wrap;
+        }
+        .params {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .param-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .param-name {
+            font-weight: 500;
+            color: #495057;
+        }
+        .param-value {
+            color: #6c757d;
+        }
+        .toggle-icon {
+            transition: transform 0.2s;
+        }
+        .toggle-icon.rotated {
+            transform: rotate(90deg);
+        }
+        .search-box {
+            margin: 20px 30px 0 30px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+        .highlight {
+            background-color: yellow;
+            font-weight: bold;
+        }
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-style: italic;
+        }
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 5px;
+            }
+            .header {
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 2em;
+            }
+            .stats {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            .sessions {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>UniMRCP Log Analysis Report</h1>
+            <p>Interactive analysis of SIP and MRCP message flows</p>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search for text, IP addresses, methods, or any content...">
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalSessions">-</div>
+                <div class="stat-label">Total SIP Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="completedSessions">-</div>
+                <div class="stat-label">Completed Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="incompleteSessions">-</div>
+                <div class="stat-label">Incomplete Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="completionRate">-</div>
+                <div class="stat-label">Completion Rate</div>
+            </div>
+        </div>
+        
+        <div class="sessions" id="sessionsContainer">
+            <!-- Sessions will be populated here -->
+        </div>
+    </div>
+
+    <script>
+        const data = {
+  "total_sip_sessions": 5,
+  "session_health": {
+    "completed_sessions": 5,
+    "incomplete_sessions": 0,
+    "completion_rate": "100.0%"
+  },
+  "sessions": [
+    {
+      "session_divider": "=== SIP SESSION 1 ===",
+      "session_info": "SIP Session 1 of 6 - Call-ID: 2cbce729-9a3e-4bf8-a326-e05b09515878 - Duration: 00:00:42.093 - Status: INCOMPLETE (NO INVITE)",
+      "session_data": {
+        "call_id": "2cbce729-9a3e-4bf8-a326-e05b09515878",
+        "session_start": "2025-06-30T22:27:10.702Z",
+        "session_end": "2025-06-30T22:27:52.796Z",
+        "duration_ms": 42093,
+        "duration_pretty": "00:00:42.093",
+        "sip": {
+          "bye": {
+            "raw": "2025-06-30 22:27:52.796626 recv 336 bytes from tcp/[172.24.13.60]:44764\n   ------------------------------------------------------------------------\n   BYE sip:172.24.13.66:8060 SIP/2.0\n   Via: SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bK0da2512b-8dea-4b73-a8aa-d089e92bac59\n   From: <sip:EmpirixClient@66.211.132.52:38874>;tag=262f87c9\n   To: <sip:mrcpserver@172.24.13.66>;tag=Hr89a3932DgvQ\n   Call-ID: 2cbce729-9a3e-4bf8-a326-e05b09515878\n   CSeq: 2 BYE\n   Max-Forwards: 70\n   Content-Length: 0\n   \n   ------------------------------------------------------------------------",
+            "details": {
+              "Via": "SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bK0da2512b-8dea-4b73-a8aa-d089e92bac59",
+              "From": "<sip:EmpirixClient@66.211.132.52:38874>;tag=262f87c9",
+              "To": "<sip:mrcpserver@172.24.13.66>;tag=Hr89a3932DgvQ",
+              "Call-ID": "2cbce729-9a3e-4bf8-a326-e05b09515878",
+              "CSeq": "2 BYE"
+            }
+          }
+        },
+        "mrcp_sids": [
+          "5d3115fe560111f0",
+          "502a945c560111f0"
+        ],
+        "mrcp_messages": [
+          {
+            "timestamp": "2025-06-30T22:27:10.704089Z",
+            "channel_id": "5d3115fe560111f0@speechrecog",
+            "req_id": "1",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "DEFINE-GRAMMAR",
+            "direction_role": "172.24.13.66 -> 172.24.13.60",
+            "grammar_ref": "grammar_56bfdfcf"
+          },
+          {
+            "timestamp": "2025-06-30T22:27:10.732076Z",
+            "channel_id": "5d3115fe560111f0@speechrecog",
+            "req_id": "2",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "SET-PARAMS",
+            "direction_role": "172.24.13.66 -> 172.24.13.60",
+            "params_ref": "params_c4271f7f"
+          },
+          {
+            "timestamp": "2025-06-30T22:27:17.136689Z",
+            "channel_id": "5d3115fe560111f0@speechrecog",
+            "req_id": "3",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNIZE",
+            "direction_role": "172.24.13.66 -> 172.24.13.60"
+          },
+          {
+            "timestamp": "2025-06-30T22:27:18.226068Z",
+            "channel_id": "5d3115fe560111f0@speechrecog",
+            "req_id": "3",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "START-OF-INPUT",
+            "direction_role": "172.24.13.60 -> 172.24.13.66"
+          },
+          {
+            "timestamp": "2025-06-30T22:27:20.711001Z",
+            "channel_id": "502a945c560111f0@speechrecog",
+            "req_id": "4",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNITION-COMPLETE",
+            "status": "4",
+            "direction_role": "172.24.13.60 -> 172.24.13.66"
+          },
+          {
+            "timestamp": "2025-06-30T22:27:28.256570Z",
+            "channel_id": "5d3115fe560111f0@speechrecog",
+            "req_id": "3",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNITION-COMPLETE",
+            "status": "3",
+            "direction_role": "172.24.13.60 -> 172.24.13.66",
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.97\">\n    <input mode=\"speech\">thank you for calling infosta please press one to connect with sales and press two to connect with our support team</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <static_press dtmf=\"1\">one</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with sales and</node_label>\n          </goals>\n        </intent>\n      <intent>\n        <actions>\n          <static_press dtmf=\"2\">two</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with our support team</node_label>\n          </goals>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "thank you for calling infosta please press one to connect with sales and press two to connect with our support team"
+          },
+          {
+            "timestamp": "2025-06-30T22:27:28.903872Z",
+            "channel_id": "5d3115fe560111f0@speechrecog",
+            "req_id": "4",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNIZE",
+            "direction_role": "172.24.13.66 -> 172.24.13.60"
+          },
+          {
+            "timestamp": "2025-06-30T22:27:34.945313Z",
+            "channel_id": "5d3115fe560111f0@speechrecog",
+            "req_id": "4",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "START-OF-INPUT",
+            "direction_role": "172.24.13.60 -> 172.24.13.66"
+          },
+          {
+            "timestamp": "2025-06-30T22:27:51.545205Z",
+            "channel_id": "5d3115fe560111f0@speechrecog",
+            "req_id": "4",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNITION-COMPLETE",
+            "status": "4",
+            "direction_role": "172.24.13.60 -> 172.24.13.66",
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.98\">\n    <input mode=\"speech\">you've reached the info vista support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <variable_say>leave your name number and a brief description of your issue</variable_say>\n          </actions>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "you've reached the info vista support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly"
+          }
+        ],
+        "grammar_definitions": {
+          "grammar_56bfdfcf": "<ns0:grammar xmlns:ns0=\"http://www.w3.org/2001/06/grammar\" version=\"1.0\" xml:lang=\"en-US\" tag-format=\"semantics/1.0\" root=\"__TRANSCRIBE__\" nlu=\"empirix-ner-relation\">\n  <ns0:rule id=\"__TRANSCRIBE__\">\n    <ns0:item>transcribe</ns0:item>\n    </ns0:rule>\n  </ns0:grammar>\n"
+        },
+        "parameter_sets": {
+          "params_c4271f7f": {
+            "No-Input-Timeout": "15000",
+            "Recognition-Timeout": "90000",
+            "Speech-Complete-Timeout": "3500",
+            "Speech-Incomplete-Timeout": "3500",
+            "Speech-Language": "en,es",
+            "Sensitivity-Level": "0.50",
+            "Speed-Vs-Accuracy": "0.50",
+            "Save-Waveform": "false"
+          }
+        },
+        "nlsml_results": [
+          {
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.97\">\n    <input mode=\"speech\">thank you for calling infosta please press one to connect with sales and press two to connect with our support team</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <static_press dtmf=\"1\">one</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with sales and</node_label>\n          </goals>\n        </intent>\n      <intent>\n        <actions>\n          <static_press dtmf=\"2\">two</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with our support team</node_label>\n          </goals>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "thank you for calling infosta please press one to connect with sales and press two to connect with our support team",
+            "timestamp": "2025-06-30T22:27:28.256570Z"
+          },
+          {
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.98\">\n    <input mode=\"speech\">you've reached the info vista support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <variable_say>leave your name number and a brief description of your issue</variable_say>\n          </actions>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "you've reached the info vista support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly",
+            "timestamp": "2025-06-30T22:27:51.545205Z"
+          }
+        ],
+        "recognized_texts": [
+          "thank you for calling infosta please press one to connect with sales and press two to connect with our support team",
+          "you've reached the info vista support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly"
+        ],
+        "warning": "SIP BYE seen but no SIP INVITE found — session may be truncated or incomplete",
+        "status": "COMPLETE"
+      }
+    },
+    {
+      "session_divider": "=== SIP SESSION 2 ===",
+      "session_info": "SIP Session 2 of 6 - Call-ID: 9aed2736-9832-4cfa-87f3-3f0123a0620e - Duration: N/A - Status: TTS-ONLY",
+      "session_data": {}
+    },
+    {
+      "session_divider": "=== SIP SESSION 3 ===",
+      "session_info": "SIP Session 3 of 6 - Call-ID: 9be08eb6-fb02-4d88-9136-afd9da84313b - Duration: 00:00:33.606 - Status: COMPLETE",
+      "session_data": {
+        "call_id": "9be08eb6-fb02-4d88-9136-afd9da84313b",
+        "session_start": "2025-07-01T00:27:11.063Z",
+        "session_end": "2025-07-01T00:27:44.670Z",
+        "duration_ms": 33606,
+        "duration_pretty": "00:00:33.606",
+        "sip": {
+          "invite": {
+            "raw": "2025-07-01 00:27:11.063858 recv 830 bytes from tcp/[172.24.13.60]:47179\n   ------------------------------------------------------------------------\n   INVITE sip:mrcpserver@172.24.13.66 SIP/2.0\n   Via: SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bKb782b576-ef6e-4e6b-8853-8ed3344e5b04\n   From: <sip:EmpirixClient@66.211.132.52:38874>;tag=57b94d62\n   To: <sip:mrcpserver@172.24.13.66>\n   Call-ID: 9be08eb6-fb02-4d88-9136-afd9da84313b\n   CSeq: 1 INVITE\n   Max-Forwards: 70\n   Contact: <sip:EmpirixClient@66.211.132.52:38874;transport=tcp>\n\"   Supported: 100rel, replaces\"\n   Accept: application/sdp\n\"   Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, UPDATE, REFER, NOTIFY\"\n   Content-Type: application/sdp\n   Content-Length: 284\n   \n   v=0\n   o=Empirix 2115286887 2115286887 IN IP4 127.0.0.1\n   s=SIP Call\n   c=IN IP4 172.24.13.60\n   t=0 0\n   m=application 9 TCP/MRCPv2\n   c=IN IP4 172.24.13.60\n   a=setup:active\n   a=connection:new\n   a=resource:speechrecog\n   a=cmid:1\n   m=audio 64749 RTP/AVP 0\n   a=rtpmap:0 pcmu/8000\n   a=sendonly\n   a=mid:1\n   ------------------------------------------------------------------------",
+            "details": {
+              "Via": "SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bKb782b576-ef6e-4e6b-8853-8ed3344e5b04",
+              "From": "<sip:EmpirixClient@66.211.132.52:38874>;tag=57b94d62",
+              "To": "<sip:mrcpserver@172.24.13.66>",
+              "Call-ID": "9be08eb6-fb02-4d88-9136-afd9da84313b",
+              "CSeq": "1 INVITE",
+              "Contact": "<sip:EmpirixClient@66.211.132.52:38874;transport=tcp>"
+            }
+          },
+          "bye": {
+            "raw": "2025-07-01 00:27:44.670176 recv 336 bytes from tcp/[172.24.13.60]:47179\n   ------------------------------------------------------------------------\n   BYE sip:172.24.13.66:8060 SIP/2.0\n   Via: SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bK03c25b67-ad92-4a6f-89c2-87591903548d\n   From: <sip:EmpirixClient@66.211.132.52:38874>;tag=57b94d62\n   To: <sip:mrcpserver@172.24.13.66>;tag=j112cyt7Zp6eK\n   Call-ID: 9be08eb6-fb02-4d88-9136-afd9da84313b\n   CSeq: 2 BYE\n   Max-Forwards: 70\n   Content-Length: 0\n   \n   ------------------------------------------------------------------------",
+            "details": {
+              "Via": "SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bK03c25b67-ad92-4a6f-89c2-87591903548d",
+              "From": "<sip:EmpirixClient@66.211.132.52:38874>;tag=57b94d62",
+              "To": "<sip:mrcpserver@172.24.13.66>;tag=j112cyt7Zp6eK",
+              "Call-ID": "9be08eb6-fb02-4d88-9136-afd9da84313b",
+              "CSeq": "2 BYE"
+            }
+          }
+        },
+        "mrcp_sids": [
+          "2d9461e6561211f0",
+          "20f282a6561211f0"
+        ],
+        "mrcp_messages": [
+          {
+            "timestamp": "2025-07-01T00:27:11.074064Z",
+            "channel_id": "20f282a6561211f0@speechrecog",
+            "req_id": "1",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "DEFINE-GRAMMAR",
+            "direction_role": "172.24.13.66 -> 172.24.13.60",
+            "grammar_ref": "grammar_56bfdfcf"
+          },
+          {
+            "timestamp": "2025-07-01T00:27:11.112124Z",
+            "channel_id": "20f282a6561211f0@speechrecog",
+            "req_id": "2",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "SET-PARAMS",
+            "direction_role": "172.24.13.66 -> 172.24.13.60",
+            "params_ref": "params_c4271f7f"
+          },
+          {
+            "timestamp": "2025-07-01T00:27:14.997762Z",
+            "channel_id": "20f282a6561211f0@speechrecog",
+            "req_id": "3",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNIZE",
+            "direction_role": "172.24.13.66 -> 172.24.13.60"
+          },
+          {
+            "timestamp": "2025-07-01T00:27:16.087408Z",
+            "channel_id": "20f282a6561211f0@speechrecog",
+            "req_id": "3",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "START-OF-INPUT",
+            "direction_role": "172.24.13.60 -> 172.24.13.66"
+          },
+          {
+            "timestamp": "2025-07-01T00:27:26.575962Z",
+            "channel_id": "20f282a6561211f0@speechrecog",
+            "req_id": "3",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNITION-COMPLETE",
+            "status": "3",
+            "direction_role": "172.24.13.60 -> 172.24.13.66",
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.97\">\n    <input mode=\"speech\">thank you for calling info vista please press one to connect with sales and press two to connect with our support team</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <static_press dtmf=\"1\">one</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with sales</node_label>\n          </goals>\n        </intent>\n      <intent>\n        <actions>\n          <static_press dtmf=\"2\">two</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with our support team</node_label>\n          </goals>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "thank you for calling info vista please press one to connect with sales and press two to connect with our support team"
+          },
+          {
+            "timestamp": "2025-07-01T00:27:27.236127Z",
+            "channel_id": "20f282a6561211f0@speechrecog",
+            "req_id": "4",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNIZE",
+            "direction_role": "172.24.13.66 -> 172.24.13.60"
+          },
+          {
+            "timestamp": "2025-07-01T00:27:42.245003Z",
+            "channel_id": "20f282a6561211f0@speechrecog",
+            "req_id": "4",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNITION-COMPLETE",
+            "status": "4",
+            "direction_role": "172.24.13.60 -> 172.24.13.66"
+          }
+        ],
+        "grammar_definitions": {
+          "grammar_56bfdfcf": "<ns0:grammar xmlns:ns0=\"http://www.w3.org/2001/06/grammar\" version=\"1.0\" xml:lang=\"en-US\" tag-format=\"semantics/1.0\" root=\"__TRANSCRIBE__\" nlu=\"empirix-ner-relation\">\n  <ns0:rule id=\"__TRANSCRIBE__\">\n    <ns0:item>transcribe</ns0:item>\n    </ns0:rule>\n  </ns0:grammar>\n"
+        },
+        "parameter_sets": {
+          "params_c4271f7f": {
+            "No-Input-Timeout": "15000",
+            "Recognition-Timeout": "90000",
+            "Speech-Complete-Timeout": "3500",
+            "Speech-Incomplete-Timeout": "3500",
+            "Speech-Language": "en,es",
+            "Sensitivity-Level": "0.50",
+            "Speed-Vs-Accuracy": "0.50",
+            "Save-Waveform": "false"
+          }
+        },
+        "nlsml_results": [
+          {
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.97\">\n    <input mode=\"speech\">thank you for calling info vista please press one to connect with sales and press two to connect with our support team</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <static_press dtmf=\"1\">one</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with sales</node_label>\n          </goals>\n        </intent>\n      <intent>\n        <actions>\n          <static_press dtmf=\"2\">two</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with our support team</node_label>\n          </goals>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "thank you for calling info vista please press one to connect with sales and press two to connect with our support team",
+            "timestamp": "2025-07-01T00:27:26.575962Z"
+          }
+        ],
+        "recognized_texts": [
+          "thank you for calling info vista please press one to connect with sales and press two to connect with our support team"
+        ],
+        "status": "COMPLETE"
+      }
+    },
+    {
+      "session_divider": "=== SIP SESSION 4 ===",
+      "session_info": "SIP Session 4 of 6 - Call-ID: 8db17ad7-de40-4adc-8477-dd57e69872f7 - Duration: 00:00:40.507 - Status: COMPLETE",
+      "session_data": {
+        "call_id": "8db17ad7-de40-4adc-8477-dd57e69872f7",
+        "session_start": "2025-07-01T00:27:32.257Z",
+        "session_end": "2025-07-01T00:28:12.764Z",
+        "duration_ms": 40507,
+        "duration_pretty": "00:00:40.507",
+        "sip": {
+          "invite": {
+            "raw": "2025-07-01 00:27:32.257398 recv 830 bytes from tcp/[172.24.13.60]:47193\n   ------------------------------------------------------------------------\n   INVITE sip:mrcpserver@172.24.13.66 SIP/2.0\n   Via: SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bK7596041d-8926-42bd-be4a-777b0ed10f0b\n   From: <sip:EmpirixClient@66.211.132.52:38874>;tag=82316701\n   To: <sip:mrcpserver@172.24.13.66>\n   Call-ID: 8db17ad7-de40-4adc-8477-dd57e69872f7\n   CSeq: 1 INVITE\n   Max-Forwards: 70\n   Contact: <sip:EmpirixClient@66.211.132.52:38874;transport=tcp>\n\"   Supported: 100rel, replaces\"\n   Accept: application/sdp\n\"   Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, UPDATE, REFER, NOTIFY\"\n   Content-Type: application/sdp\n   Content-Length: 284\n   \n   v=0\n   o=Empirix 2327218793 2327218793 IN IP4 127.0.0.1\n   s=SIP Call\n   c=IN IP4 172.24.13.60\n   t=0 0\n   m=application 9 TCP/MRCPv2\n   c=IN IP4 172.24.13.60\n   a=setup:active\n   a=connection:new\n   a=resource:speechrecog\n   a=cmid:1\n   m=audio 64750 RTP/AVP 0\n   a=rtpmap:0 pcmu/8000\n   a=sendonly\n   a=mid:1\n   ------------------------------------------------------------------------",
+            "details": {
+              "Via": "SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bK7596041d-8926-42bd-be4a-777b0ed10f0b",
+              "From": "<sip:EmpirixClient@66.211.132.52:38874>;tag=82316701",
+              "To": "<sip:mrcpserver@172.24.13.66>",
+              "Call-ID": "8db17ad7-de40-4adc-8477-dd57e69872f7",
+              "CSeq": "1 INVITE",
+              "Contact": "<sip:EmpirixClient@66.211.132.52:38874;transport=tcp>"
+            }
+          },
+          "bye": {
+            "raw": "2025-07-01 00:28:12.764921 recv 336 bytes from tcp/[172.24.13.60]:47193\n   ------------------------------------------------------------------------\n   BYE sip:172.24.13.66:8060 SIP/2.0\n   Via: SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bK6355cf9c-72f3-495c-b06d-f26e8bd6a492\n   From: <sip:EmpirixClient@66.211.132.52:38874>;tag=82316701\n   To: <sip:mrcpserver@172.24.13.66>;tag=KaUUeSBBXZv1e\n   Call-ID: 8db17ad7-de40-4adc-8477-dd57e69872f7\n   CSeq: 2 BYE\n   Max-Forwards: 70\n   Content-Length: 0\n   \n   ------------------------------------------------------------------------",
+            "details": {
+              "Via": "SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bK6355cf9c-72f3-495c-b06d-f26e8bd6a492",
+              "From": "<sip:EmpirixClient@66.211.132.52:38874>;tag=82316701",
+              "To": "<sip:mrcpserver@172.24.13.66>;tag=KaUUeSBBXZv1e",
+              "Call-ID": "8db17ad7-de40-4adc-8477-dd57e69872f7",
+              "CSeq": "2 BYE"
+            }
+          }
+        },
+        "mrcp_sids": [
+          "2d9461e6561211f0"
+        ],
+        "mrcp_messages": [
+          {
+            "timestamp": "2025-07-01T00:27:32.275040Z",
+            "channel_id": "2d9461e6561211f0@speechrecog",
+            "req_id": "1",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "DEFINE-GRAMMAR",
+            "direction_role": "172.24.13.66 -> 172.24.13.60",
+            "grammar_ref": "grammar_56bfdfcf"
+          },
+          {
+            "timestamp": "2025-07-01T00:27:32.300111Z",
+            "channel_id": "2d9461e6561211f0@speechrecog",
+            "req_id": "2",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "SET-PARAMS",
+            "direction_role": "172.24.13.66 -> 172.24.13.60",
+            "params_ref": "params_c4271f7f"
+          },
+          {
+            "timestamp": "2025-07-01T00:27:37.111129Z",
+            "channel_id": "2d9461e6561211f0@speechrecog",
+            "req_id": "3",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNIZE",
+            "direction_role": "172.24.13.66 -> 172.24.13.60"
+          },
+          {
+            "timestamp": "2025-07-01T00:27:38.193687Z",
+            "channel_id": "2d9461e6561211f0@speechrecog",
+            "req_id": "3",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "START-OF-INPUT",
+            "direction_role": "172.24.13.60 -> 172.24.13.66"
+          },
+          {
+            "timestamp": "2025-07-01T00:27:48.229425Z",
+            "channel_id": "2d9461e6561211f0@speechrecog",
+            "req_id": "3",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNITION-COMPLETE",
+            "status": "3",
+            "direction_role": "172.24.13.60 -> 172.24.13.66",
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.94\">\n    <input mode=\"speech\">thank you for calling infilsta please press one to connect with sales and press two to connect with our support team</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <static_press dtmf=\"1\">one</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with sales</node_label>\n          </goals>\n        </intent>\n      <intent>\n        <actions>\n          <static_press dtmf=\"2\">two</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with our support team</node_label>\n          </goals>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "thank you for calling infilsta please press one to connect with sales and press two to connect with our support team"
+          },
+          {
+            "timestamp": "2025-07-01T00:27:48.872045Z",
+            "channel_id": "2d9461e6561211f0@speechrecog",
+            "req_id": "4",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNIZE",
+            "direction_role": "172.24.13.66 -> 172.24.13.60"
+          },
+          {
+            "timestamp": "2025-07-01T00:27:55.954692Z",
+            "channel_id": "2d9461e6561211f0@speechrecog",
+            "req_id": "4",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "START-OF-INPUT",
+            "direction_role": "172.24.13.60 -> 172.24.13.66"
+          },
+          {
+            "timestamp": "2025-07-01T00:28:11.517200Z",
+            "channel_id": "2d9461e6561211f0@speechrecog",
+            "req_id": "4",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNITION-COMPLETE",
+            "status": "4",
+            "direction_role": "172.24.13.60 -> 172.24.13.66",
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.97\">\n    <input mode=\"speech\">you've reached the info vista support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <variable_say>leave your name number and a brief description of your issue</variable_say>\n          </actions>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "you've reached the info vista support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly"
+          }
+        ],
+        "grammar_definitions": {
+          "grammar_56bfdfcf": "<ns0:grammar xmlns:ns0=\"http://www.w3.org/2001/06/grammar\" version=\"1.0\" xml:lang=\"en-US\" tag-format=\"semantics/1.0\" root=\"__TRANSCRIBE__\" nlu=\"empirix-ner-relation\">\n  <ns0:rule id=\"__TRANSCRIBE__\">\n    <ns0:item>transcribe</ns0:item>\n    </ns0:rule>\n  </ns0:grammar>\n"
+        },
+        "parameter_sets": {
+          "params_c4271f7f": {
+            "No-Input-Timeout": "15000",
+            "Recognition-Timeout": "90000",
+            "Speech-Complete-Timeout": "3500",
+            "Speech-Incomplete-Timeout": "3500",
+            "Speech-Language": "en,es",
+            "Sensitivity-Level": "0.50",
+            "Speed-Vs-Accuracy": "0.50",
+            "Save-Waveform": "false"
+          }
+        },
+        "nlsml_results": [
+          {
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.94\">\n    <input mode=\"speech\">thank you for calling infilsta please press one to connect with sales and press two to connect with our support team</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <static_press dtmf=\"1\">one</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with sales</node_label>\n          </goals>\n        </intent>\n      <intent>\n        <actions>\n          <static_press dtmf=\"2\">two</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with our support team</node_label>\n          </goals>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "thank you for calling infilsta please press one to connect with sales and press two to connect with our support team",
+            "timestamp": "2025-07-01T00:27:48.229425Z"
+          },
+          {
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.97\">\n    <input mode=\"speech\">you've reached the info vista support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <variable_say>leave your name number and a brief description of your issue</variable_say>\n          </actions>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "you've reached the info vista support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly",
+            "timestamp": "2025-07-01T00:28:11.517200Z"
+          }
+        ],
+        "recognized_texts": [
+          "thank you for calling infilsta please press one to connect with sales and press two to connect with our support team",
+          "you've reached the info vista support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly"
+        ],
+        "status": "COMPLETE"
+      }
+    },
+    {
+      "session_divider": "=== SIP SESSION 5 ===",
+      "session_info": "SIP Session 5 of 6 - Call-ID: 5dca81fa-e6ea-4a57-b014-026ab300269c - Duration: 00:00:32.235 - Status: COMPLETE",
+      "session_data": {
+        "call_id": "5dca81fa-e6ea-4a57-b014-026ab300269c",
+        "session_start": "2025-07-01T02:37:02.372Z",
+        "session_end": "2025-07-01T02:37:34.608Z",
+        "duration_ms": 32235,
+        "duration_pretty": "00:00:32.235",
+        "sip": {
+          "invite": {
+            "raw": "2025-07-01 02:37:02.372854 recv 830 bytes from tcp/[172.24.13.60]:22081\n   ------------------------------------------------------------------------\n   INVITE sip:mrcpserver@172.24.13.66 SIP/2.0\n   Via: SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bKa0de0e79-4943-4a73-9b82-d778a0525f9b\n   From: <sip:EmpirixClient@66.211.132.52:38874>;tag=4567dc14\n   To: <sip:mrcpserver@172.24.13.66>\n   Call-ID: 5dca81fa-e6ea-4a57-b014-026ab300269c\n   CSeq: 1 INVITE\n   Max-Forwards: 70\n   Contact: <sip:EmpirixClient@66.211.132.52:38874;transport=tcp>\n\"   Supported: 100rel, replaces\"\n   Accept: application/sdp\n\"   Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, UPDATE, REFER, NOTIFY\"\n   Content-Type: application/sdp\n   Content-Length: 284\n   \n   v=0\n   o=Empirix 2718953673 2718953673 IN IP4 127.0.0.1\n   s=SIP Call\n   c=IN IP4 172.24.13.60\n   t=0 0\n   m=application 9 TCP/MRCPv2\n   c=IN IP4 172.24.13.60\n   a=setup:active",
+            "details": {
+              "Via": "SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bKa0de0e79-4943-4a73-9b82-d778a0525f9b",
+              "From": "<sip:EmpirixClient@66.211.132.52:38874>;tag=4567dc14",
+              "To": "<sip:mrcpserver@172.24.13.66>",
+              "Call-ID": "5dca81fa-e6ea-4a57-b014-026ab300269c",
+              "CSeq": "1 INVITE",
+              "Contact": "<sip:EmpirixClient@66.211.132.52:38874;transport=tcp>"
+            }
+          }
+        },
+        "mrcp_sids": [
+          "51f9c8e8562411f0",
+          "44edeb34562411f0"
+        ],
+        "mrcp_messages": [
+          {
+            "timestamp": "2025-07-01T02:37:02.384608Z",
+            "channel_id": "44edeb34562411f0@speechrecog",
+            "req_id": "1",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "DEFINE-GRAMMAR",
+            "direction_role": "172.24.13.66 -> 172.24.13.60",
+            "grammar_ref": "grammar_56bfdfcf"
+          },
+          {
+            "timestamp": "2025-07-01T02:37:02.415733Z",
+            "channel_id": "44edeb34562411f0@speechrecog",
+            "req_id": "2",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "SET-PARAMS",
+            "direction_role": "172.24.13.66 -> 172.24.13.60",
+            "params_ref": "params_c4271f7f"
+          },
+          {
+            "timestamp": "2025-07-01T02:37:06.552326Z",
+            "channel_id": "44edeb34562411f0@speechrecog",
+            "req_id": "3",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNIZE",
+            "direction_role": "172.24.13.66 -> 172.24.13.60"
+          },
+          {
+            "timestamp": "2025-07-01T02:37:07.634926Z",
+            "channel_id": "44edeb34562411f0@speechrecog",
+            "req_id": "3",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "START-OF-INPUT",
+            "direction_role": "172.24.13.60 -> 172.24.13.66"
+          },
+          {
+            "timestamp": "2025-07-01T02:37:18.064797Z",
+            "channel_id": "44edeb34562411f0@speechrecog",
+            "req_id": "3",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNITION-COMPLETE",
+            "status": "3",
+            "direction_role": "172.24.13.60 -> 172.24.13.66",
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.96\">\n    <input mode=\"speech\">thank you for calling info vista please press one to connect with sales and press two to connect with our support team</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <static_press dtmf=\"1\">one</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with sales</node_label>\n          </goals>\n        </intent>\n      <intent>\n        <actions>\n          <static_press dtmf=\"2\">two</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with our support team</node_label>\n          </goals>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "thank you for calling info vista please press one to connect with sales and press two to connect with our support team"
+          },
+          {
+            "timestamp": "2025-07-01T02:37:19.599026Z",
+            "channel_id": "44edeb34562411f0@speechrecog",
+            "req_id": "4",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNIZE",
+            "direction_role": "172.24.13.66 -> 172.24.13.60"
+          },
+          {
+            "timestamp": "2025-07-01T02:37:34.608609Z",
+            "channel_id": "44edeb34562411f0@speechrecog",
+            "req_id": "4",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNITION-COMPLETE",
+            "status": "4",
+            "direction_role": "172.24.13.60 -> 172.24.13.66"
+          }
+        ],
+        "grammar_definitions": {
+          "grammar_56bfdfcf": "<ns0:grammar xmlns:ns0=\"http://www.w3.org/2001/06/grammar\" version=\"1.0\" xml:lang=\"en-US\" tag-format=\"semantics/1.0\" root=\"__TRANSCRIBE__\" nlu=\"empirix-ner-relation\">\n  <ns0:rule id=\"__TRANSCRIBE__\">\n    <ns0:item>transcribe</ns0:item>\n    </ns0:rule>\n  </ns0:grammar>\n"
+        },
+        "parameter_sets": {
+          "params_c4271f7f": {
+            "No-Input-Timeout": "15000",
+            "Recognition-Timeout": "90000",
+            "Speech-Complete-Timeout": "3500",
+            "Speech-Incomplete-Timeout": "3500",
+            "Speech-Language": "en,es",
+            "Sensitivity-Level": "0.50",
+            "Speed-Vs-Accuracy": "0.50",
+            "Save-Waveform": "false"
+          }
+        },
+        "nlsml_results": [
+          {
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.96\">\n    <input mode=\"speech\">thank you for calling info vista please press one to connect with sales and press two to connect with our support team</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <static_press dtmf=\"1\">one</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with sales</node_label>\n          </goals>\n        </intent>\n      <intent>\n        <actions>\n          <static_press dtmf=\"2\">two</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with our support team</node_label>\n          </goals>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "thank you for calling info vista please press one to connect with sales and press two to connect with our support team",
+            "timestamp": "2025-07-01T02:37:18.064797Z"
+          }
+        ],
+        "recognized_texts": [
+          "thank you for calling info vista please press one to connect with sales and press two to connect with our support team"
+        ],
+        "warning": "no SIP BYE seen — session may be incomplete",
+        "status": "COMPLETE"
+      }
+    },
+    {
+      "session_divider": "=== SIP SESSION 6 ===",
+      "session_info": "SIP Session 6 of 6 - Call-ID: fbe3bfb0-d1c7-45b6-a003-a99e3a5ec764 - Duration: 00:00:40.855 - Status: COMPLETE",
+      "session_data": {
+        "call_id": "fbe3bfb0-d1c7-45b6-a003-a99e3a5ec764",
+        "session_start": "2025-07-01T02:37:24.261Z",
+        "session_end": "2025-07-01T02:38:05.116Z",
+        "duration_ms": 40855,
+        "duration_pretty": "00:00:40.855",
+        "sip": {
+          "invite": {
+            "raw": "2025-07-01 02:37:24.261116 recv 830 bytes from tcp/[172.24.13.60]:22093\n   ------------------------------------------------------------------------\n   INVITE sip:mrcpserver@172.24.13.66 SIP/2.0\n   Via: SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bK55b04c34-703b-409e-820f-c2507d8f40ba\n   From: <sip:EmpirixClient@66.211.132.52:38874>;tag=71b71ef8\n   To: <sip:mrcpserver@172.24.13.66>\n   Call-ID: fbe3bfb0-d1c7-45b6-a003-a99e3a5ec764\n   CSeq: 1 INVITE\n   Max-Forwards: 70\n   Contact: <sip:EmpirixClient@66.211.132.52:38874;transport=tcp>\n\"   Supported: 100rel, replaces\"\n   Accept: application/sdp\n\"   Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, UPDATE, REFER, NOTIFY\"\n   Content-Type: application/sdp\n   Content-Length: 284\n   \n   v=0\n   o=Empirix 2937839158 2937839158 IN IP4 127.0.0.1",
+            "details": {
+              "Via": "SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bK55b04c34-703b-409e-820f-c2507d8f40ba",
+              "From": "<sip:EmpirixClient@66.211.132.52:38874>;tag=71b71ef8",
+              "To": "<sip:mrcpserver@172.24.13.66>",
+              "Call-ID": "fbe3bfb0-d1c7-45b6-a003-a99e3a5ec764",
+              "CSeq": "1 INVITE",
+              "Contact": "<sip:EmpirixClient@66.211.132.52:38874;transport=tcp>"
+            }
+          },
+          "bye": {
+            "raw": "2025-07-01 02:38:05.116808 recv 336 bytes from tcp/[172.24.13.60]:22093\nCompletion-Cause: 000 success\n   ------------------------------------------------------------------------\n   BYE sip:172.24.13.66:8060 SIP/2.0\nContent-Length: 616\nChannel-Identifier: 51f9c8e8562411f0@speechrecog\nContent-Type: application/nlsml+xml\n   Via: SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bKcdefcadc-3a7f-4d98-8a47-2cc9c2ab2c32\n   From: <sip:EmpirixClient@66.211.132.52:38874>;tag=71b71ef8\n\n\"<?xml version=\"\"1.0\"\" encoding=\"\"UTF-8\"\"?>\"\n<result>\n\"\t<interpretation grammar=\"\"session:request1@form-level\"\" confidence=\"\"0.96\"\">\"\n\"\t\t<input mode=\"\"speech\"\">you've reached the infasta support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly</input>\"\n   To: <sip:mrcpserver@172.24.13.66>;tag=NvDDjFDjQH96N\n   Call-ID: fbe3bfb0-d1c7-45b6-a003-a99e3a5ec764\n   CSeq: 2 BYE\n\"\t\t<instance>\"\n   Max-Forwards: 70\n\"\t\t\t<lang>en</lang>\"\n   Content-Length: 0\n\"\t\t\t<intent>\"\n   \n\"\t\t\t\t<actions>\"\n   ------------------------------------------------------------------------\n\"\t\t\t\t\t<variable_say>leave your name number and a brief description of your issue</variable_say>\"\n\"\t\t\t\t</actions>\"\n\"\t\t\t</intent>\"",
+            "details": {
+              "Via": "SIP/2.0/TCP 66.211.132.52:38874;branch=z9hG4bKcdefcadc-3a7f-4d98-8a47-2cc9c2ab2c32",
+              "From": "<sip:EmpirixClient@66.211.132.52:38874>;tag=71b71ef8",
+              "To": "<sip:mrcpserver@172.24.13.66>;tag=NvDDjFDjQH96N",
+              "Call-ID": "fbe3bfb0-d1c7-45b6-a003-a99e3a5ec764",
+              "CSeq": "2 BYE"
+            }
+          }
+        },
+        "mrcp_sids": [],
+        "mrcp_messages": [
+          {
+            "timestamp": "2025-07-01T02:37:24.274119Z",
+            "channel_id": "51f9c8e8562411f0@speechrecog",
+            "req_id": "1",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "DEFINE-GRAMMAR",
+            "direction_role": "172.24.13.66 -> 172.24.13.60",
+            "grammar_ref": "grammar_56bfdfcf"
+          },
+          {
+            "timestamp": "2025-07-01T02:37:24.296253Z",
+            "channel_id": "51f9c8e8562411f0@speechrecog",
+            "req_id": "2",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "SET-PARAMS",
+            "direction_role": "172.24.13.66 -> 172.24.13.60",
+            "params_ref": "params_c4271f7f"
+          },
+          {
+            "timestamp": "2025-07-01T02:37:28.474049Z",
+            "channel_id": "51f9c8e8562411f0@speechrecog",
+            "req_id": "3",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNIZE",
+            "direction_role": "172.24.13.66 -> 172.24.13.60"
+          },
+          {
+            "timestamp": "2025-07-01T02:37:30.044960Z",
+            "channel_id": "51f9c8e8562411f0@speechrecog",
+            "req_id": "3",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "START-OF-INPUT",
+            "direction_role": "172.24.13.60 -> 172.24.13.66"
+          },
+          {
+            "timestamp": "2025-07-01T02:37:40.078647Z",
+            "channel_id": "51f9c8e8562411f0@speechrecog",
+            "req_id": "3",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNITION-COMPLETE",
+            "status": "3",
+            "direction_role": "172.24.13.60 -> 172.24.13.66",
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.95\">\n    <input mode=\"speech\">thank you for calling info vista please press one to connect with sales and press two to connect with our support team</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <static_press dtmf=\"1\">one</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with sales</node_label>\n          </goals>\n        </intent>\n      <intent>\n        <actions>\n          <static_press dtmf=\"2\">two</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with our support team</node_label>\n          </goals>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "thank you for calling info vista please press one to connect with sales and press two to connect with our support team"
+          },
+          {
+            "timestamp": "2025-07-01T02:37:40.729196Z",
+            "channel_id": "51f9c8e8562411f0@speechrecog",
+            "req_id": "4",
+            "is_request": true,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNIZE",
+            "direction_role": "172.24.13.66 -> 172.24.13.60"
+          },
+          {
+            "timestamp": "2025-07-01T02:37:48.294723Z",
+            "channel_id": "51f9c8e8562411f0@speechrecog",
+            "req_id": "4",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "START-OF-INPUT",
+            "direction_role": "172.24.13.60 -> 172.24.13.66"
+          },
+          {
+            "timestamp": "2025-07-01T02:38:03.855658Z",
+            "channel_id": "51f9c8e8562411f0@speechrecog",
+            "req_id": "4",
+            "is_request": false,
+            "src_ip": "172.24.13.66",
+            "dst_ip": "172.24.13.60",
+            "method": "RECOGNITION-COMPLETE",
+            "status": "4",
+            "direction_role": "172.24.13.60 -> 172.24.13.66",
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.96\">\n    <input mode=\"speech\">you've reached the infasta support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <variable_say>leave your name number and a brief description of your issue</variable_say>\n          </actions>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "you've reached the infasta support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly"
+          }
+        ],
+        "grammar_definitions": {
+          "grammar_56bfdfcf": "<ns0:grammar xmlns:ns0=\"http://www.w3.org/2001/06/grammar\" version=\"1.0\" xml:lang=\"en-US\" tag-format=\"semantics/1.0\" root=\"__TRANSCRIBE__\" nlu=\"empirix-ner-relation\">\n  <ns0:rule id=\"__TRANSCRIBE__\">\n    <ns0:item>transcribe</ns0:item>\n    </ns0:rule>\n  </ns0:grammar>\n"
+        },
+        "parameter_sets": {
+          "params_c4271f7f": {
+            "No-Input-Timeout": "15000",
+            "Recognition-Timeout": "90000",
+            "Speech-Complete-Timeout": "3500",
+            "Speech-Incomplete-Timeout": "3500",
+            "Speech-Language": "en,es",
+            "Sensitivity-Level": "0.50",
+            "Speed-Vs-Accuracy": "0.50",
+            "Save-Waveform": "false"
+          }
+        },
+        "nlsml_results": [
+          {
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.95\">\n    <input mode=\"speech\">thank you for calling info vista please press one to connect with sales and press two to connect with our support team</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <static_press dtmf=\"1\">one</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with sales</node_label>\n          </goals>\n        </intent>\n      <intent>\n        <actions>\n          <static_press dtmf=\"2\">two</static_press>\n          </actions>\n        <goals>\n          <node_label>connect with our support team</node_label>\n          </goals>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "thank you for calling info vista please press one to connect with sales and press two to connect with our support team",
+            "timestamp": "2025-07-01T02:37:40.078647Z"
+          },
+          {
+            "nlsml_content": "<result>\n  <interpretation grammar=\"session:request1@form-level\" confidence=\"0.96\">\n    <input mode=\"speech\">you've reached the infasta support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly</input>\n    <instance>\n      <lang>en</lang>\n      <intent>\n        <actions>\n          <variable_say>leave your name number and a brief description of your issue</variable_say>\n          </actions>\n        </intent>\n      </instance>\n    </interpretation>\n  </result>\n",
+            "recognized_text": "you've reached the infasta support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly",
+            "timestamp": "2025-07-01T02:38:03.855658Z"
+          },
+          {
+            "nlsml_content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<result>\n<interpretation grammar=\"session:request1@form-level\" confidence=\"0.96\">\n<input mode=\"speech\">you've reached the infasta support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly</input>\n<instance>\n<lang>en</lang>\n<intent>\n<actions>\n<variable_say>leave your name number and a brief description of your issue</variable_say>\n</actions>\n</intent>",
+            "recognized_text": "you've reached the infasta support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly",
+            "timestamp": "2025-07-01T02:38:05.116808Z",
+            "source": "SIP BYE"
+          }
+        ],
+        "recognized_texts": [
+          "thank you for calling info vista please press one to connect with sales and press two to connect with our support team",
+          "you've reached the infasta support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly",
+          "you've reached the infasta support team unfortunately all our agents are busy with other customers please leave your name number and a brief description of your issue and one of our team members will return your call shortly"
+        ],
+        "status": "COMPLETE"
+      }
+    }
+  ]
+};
+
+        // Initialize the report
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStats();
+            renderSessions();
+            setupSearch();
+        });
+
+        function updateStats() {
+            // Only update the stats that exist in the current HTML
+            if (data.stats) {
+                const ttsElement = document.getElementById('ttsSessions');
+                const asrElement = document.getElementById('asrSessions');
+                if (ttsElement) ttsElement.textContent = data.stats.tts_sessions || '-';
+                if (asrElement) asrElement.textContent = data.stats.asr_sessions || '-';
+            }
+        }
+
+        function getSessionCompleteness(session) {
+            const recogMessages = (session.mrcp_messages || []).filter(m => m.method === 'RECOGNITION-COMPLETE');
+            if (recogMessages.length === 0) {
+                return { complete: false, code: null };
+            }
+            const lastRecog = recogMessages[recogMessages.length - 1];
+            const code = lastRecog.status !== undefined ? parseInt(lastRecog.status, 10) : null;
+            const SUCCESS_CODES = [0, 4, 5];
+            return { complete: SUCCESS_CODES.includes(code), code };
+        }
+
+        function renderSessions() {
+            const container = document.getElementById('sessionsContainer');
+            container.innerHTML = '';
+
+            let completedCount = 0;
+            let incompleteCount = 0;
+
+            data.sessions.forEach((sessionData, sessionIndex) => {
+                const session = sessionData.session_data;
+                const statusString = (sessionData.session_info || '').toUpperCase();
+                // Use backend status string as the primary source of truth
+                if (statusString.includes('INCOMPLETE') || statusString.includes('TTS-ONLY') || statusString.includes('NO MRCP')) {
+                    incompleteCount++;
+                } else if (statusString.includes('COMPLETE')) {
+                    completedCount++;
+                } else {
+                    // fallback to MRCP completeness if needed
+                    const { complete } = getSessionCompleteness(session);
+                    if (complete) completedCount++; else incompleteCount++;
+                }
+                const sessionDiv = document.createElement('div');
+                sessionDiv.className = 'session';
+                sessionDiv.id = `session-${sessionIndex}`;
+
+                // Determine status class and text for display
+                let statusClass = 'status-incomplete';
+                let statusText = 'INCOMPLETE';
+                if (statusString.includes('NO MRCP')) {
+                    statusClass = 'status-nomrcp';
+                    statusText = 'NO MRCP';
+                } else if (statusString.includes('TTS-ONLY')) {
+                    statusClass = 'status-incomplete';
+                    statusText = 'TTS-ONLY';
+                } else if (statusString.includes('INCOMPLETE')) {
+                    statusClass = 'status-incomplete';
+                    statusText = 'INCOMPLETE';
+                } else if (statusString.includes('COMPLETE')) {
+                    statusClass = 'status-complete';
+                    statusText = 'COMPLETE';
+                }
+
+                sessionDiv.innerHTML = 
+                    `<div class="session-header" onclick="toggleSession(${sessionIndex})">
+                        <div class="session-title">${sessionData.session_info}</div>
+                        <div class="session-status ${statusClass}">${statusText}</div>
+                    </div>
+                    <div class="session-content" id="session-content-${sessionIndex}">
+                        ${renderSessionContent(session, sessionIndex)}
+                    </div>`;
+
+                if (session.explanation) {
+                  const explanationSection = document.createElement('details');
+                  explanationSection.className = 'session-explanation';
+                  const summary = document.createElement('summary');
+                  summary.textContent = 'Why is this session marked INCOMPLETE?';
+                  explanationSection.appendChild(summary);
+                  const pre = document.createElement('pre');
+                  pre.textContent = session.explanation;
+                  explanationSection.appendChild(pre);
+                  sessionDiv.appendChild(explanationSection);
+                }
+
+                container.appendChild(sessionDiv);
+            });
+
+            // Stats are now updated separately via updateStats()
+        }
+
+        function renderSessionContent(session, sessionIndex) {
+            let html = '';
+
+            // SIP Messages
+            if (session.sip) {
+                html += '<div class="section">';
+                html += '<div class="section-title">SIP Messages</div>';
+                
+                if (session.sip.invite) {
+                    html += createMessageHTML('SIP INVITE', session.sip.invite, `sip-invite-${sessionIndex}`);
+                }
+                
+                if (session.sip.bye) {
+                    html += createMessageHTML('SIP BYE', session.sip.bye, `sip-bye-${sessionIndex}`);
+                }
+                
+                html += '</div>';
+            }
+
+            // MRCP Messages
+            if (session.mrcp_messages && session.mrcp_messages.length > 0) {
+                html += '<div class="section">';
+                html += '<div class="section-title">MRCP Messages</div>';
+                
+                session.mrcp_messages.forEach((msg, msgIndex) => {
+                    const messageType = msg.is_request ? 'REQUEST' : 'RESPONSE';
+                    const title = `${msg.method} (${messageType}) - ${msg.channel_id}`;
+                    html += createMRCPMessageHTML(title, msg, `mrcp-${sessionIndex}-${msgIndex}`);
+                });
+                
+                html += '</div>';
+            }
+
+            // Grammar Definitions
+            if (session.grammar_definitions && Object.keys(session.grammar_definitions).length > 0) {
+                html += '<div class="section">';
+                html += '<div class="section-title">Grammar Definitions</div>';
+                
+                Object.entries(session.grammar_definitions).forEach(([ref, grammar]) => {
+                    html += `<div class="grammar-def"><strong>${ref}:</strong><br>${escapeHtml(grammar)}</div>`;
+                });
+                
+                html += '</div>';
+            }
+
+            // Parameter Sets
+            if (session.parameter_sets && Object.keys(session.parameter_sets).length > 0) {
+                html += '<div class="section">';
+                html += '<div class="section-title">Parameter Sets</div>';
+                
+                Object.entries(session.parameter_sets).forEach(([ref, params]) => {
+                    html += '<div class="params">';
+                    html += `<strong>${ref}:</strong><br>`;
+                    Object.entries(params).forEach(([name, value]) => {
+                        html += `<div class="param-item"><span class="param-name">${name}:</span><span class="param-value">${value}</span></div>`;
+                    });
+                    html += '</div>';
+                });
+                
+                html += '</div>';
+            }
+
+            // NLSML Results
+            if (session.nlsml_results && session.nlsml_results.length > 0) {
+                html += '<div class="section">';
+                html += '<div class="section-title">NLSML Results</div>';
+                session.nlsml_results.forEach((result, resultIndex) => {
+                    const nlsmlId = `nlsml-${sessionIndex}-${resultIndex}`;
+                    html += '<div class="message">';
+                    html += `<div class="message-header" onclick="toggleMessage('${nlsmlId}')">`;
+                    html += `<span>NLSML Result ${resultIndex + 1} - ${result.timestamp}</span>`;
+                    html += '<span class="toggle-icon">▶</span>';
+                    html += '</div>';
+                    html += `<div class="message-content" id="${nlsmlId}">`;
+                    html += `<div class="recognized-text"><strong>Recognized Text:</strong><br>${escapeHtml(result.recognized_text)}</div>`;
+                    html += `<div class="nlsml-content">${escapeHtml(result.nlsml_content)}</div>`;
+                    if (result.source) {
+                        html += `<div><em>Source: ${result.source}</em></div>`;
+                    }
+                    html += '</div>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+
+            return html;
+        }
+
+        function createMessageHTML(title, message, id) {
+            return (
+                '<div class="message">' +
+                    `<div class="message-header" onclick="toggleMessage('${id}')">` +
+                        '<span>' + title + '</span>' +
+                        '<span class="toggle-icon">▶</span>' +
+                    '</div>' +
+                    `<div class="message-content" id="${id}">` +
+                        '<div class="nlsml-content">' + escapeHtml(message.raw) + '</div>' +
+                        (message.details ? '<div class="params"><strong>Details:</strong><br>' + Object.entries(message.details).map(([k,v]) => '<div class="param-item"><span class="param-name">' + k + ':</span><span class="param-value">' + v + '</span></div>').join('') + '</div>' : '') +
+                    '</div>' +
+                '</div>'
+            );
+        }
+
+        function createMRCPMessageHTML(title, message, id) {
+            let content = `<div class="timestamp">${message.timestamp}</div>`;
+            content += `<div class="method">${message.method}</div>`;
+            content += `<div class="direction">${message.direction_role}</div>`;
+            content += `<div><strong>Request ID:</strong> ${message.req_id ?? ''}</div>`;
+            content += `<div><strong>Source IP:</strong> ${message.src_ip ?? ''}</div>`;
+            content += `<div><strong>Destination IP:</strong> ${message.dst_ip ?? ''}</div>`;
+            if (message.grammar_ref) {
+                content += `<div><strong>Grammar Ref:</strong> ${message.grammar_ref}</div>`;
+            }
+            if (message.params_ref) {
+                content += `<div><strong>Params Ref:</strong> ${message.params_ref}</div>`;
+            }
+            if (message.nlsml_content) {
+                content += `<div class="nlsml-content">${escapeHtml(message.nlsml_content)}</div>`;
+            }
+            if (message.recognized_text) {
+                content += `<div class="recognized-text">${escapeHtml(message.recognized_text)}</div>`;
+            }
+
+            return (
+                '<div class="message">' +
+                    `<div class="message-header" onclick="toggleMessage('${id}')">` +
+                        '<span>' + title + '</span>' +
+                        '<span class="toggle-icon">▶</span>' +
+                    '</div>' +
+                    `<div class="message-content" id="${id}">` +
+                        content +
+                    '</div>' +
+                '</div>'
+            );
+        }
+
+        function toggleSession(index) {
+            const content = document.getElementById('session-content-' + index);
+            content.classList.toggle('active');
+        }
+
+        function toggleMessage(id) {
+            const content = document.getElementById(id);
+            const header = content.previousElementSibling;
+            const icon = header.querySelector('.toggle-icon');
+            
+            content.classList.toggle('active');
+            icon.classList.toggle('rotated');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            let searchTimeout;
+
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    performSearch(this.value);
+                }, 300);
+            });
+        }
+
+        function performSearch(query) {
+            if (!query.trim()) {
+                clearHighlights();
+                showAllSessions();
+                return;
+            }
+
+            const searchTerm = query.toLowerCase();
+            const sessions = document.querySelectorAll('.session');
+            let hasResults = false;
+
+            sessions.forEach(session => {
+                const sessionText = session.textContent.toLowerCase();
+                const matches = sessionText.includes(searchTerm);
+                
+                if (matches) {
+                    session.style.display = 'block';
+                    hasResults = true;
+                    highlightText(session, searchTerm);
+                } else {
+                    session.style.display = 'none';
+                }
+            });
+
+            if (!hasResults) {
+                showNoResults();
+            }
+        }
+
+        function highlightText(element, searchTerm) {
+            const walker = document.createTreeWalker(
+                element,
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+            );
+
+            const textNodes = [];
+            let node;
+            while (node = walker.nextNode()) {
+                textNodes.push(node);
+            }
+
+            textNodes.forEach(textNode => {
+                const text = textNode.textContent;
+                const regex = new RegExp('(' + searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+                
+                if (regex.test(text)) {
+                    const highlightedText = text.replace(regex, '<span class="highlight">$1</span>');
+                    const span = document.createElement('span');
+                    span.innerHTML = highlightedText;
+                    textNode.parentNode.replaceChild(span, textNode);
+                }
+            });
+        }
+
+        function clearHighlights() {
+            const highlights = document.querySelectorAll('.highlight');
+            highlights.forEach(highlight => {
+                const parent = highlight.parentNode;
+                parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
+                parent.normalize();
+            });
+        }
+
+        function showAllSessions() {
+            const sessions = document.querySelectorAll('.session');
+            sessions.forEach(session => {
+                session.style.display = 'block';
+            });
+            
+            const noResults = document.querySelector('.no-results');
+            if (noResults) {
+                noResults.remove();
+            }
+        }
+
+        function showNoResults() {
+            const container = document.getElementById('sessionsContainer');
+            const existing = container.querySelector('.no-results');
+            if (!existing) {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'No results found for your search.';
+                container.appendChild(noResults);
+            }
+        }
+    </script>
+</body>
+</html>

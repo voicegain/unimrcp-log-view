@@ -1,0 +1,36 @@
+# Confidential log files - NEVER commit these
+unimrcp-blue*
+*unimrcp-blue*
+*-blue*
+*blue*
+
+# Log files in general
+*.log
+*.CSV
+*.csv
+
+# Generated files
+summary.json
+*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db 

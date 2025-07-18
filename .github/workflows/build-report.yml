@@ -1,0 +1,38 @@
+name: Build MRCP Report
+
+on:
+  workflow_dispatch:
+    inputs:
+      log_file:
+        description: 'Log file path'
+        required: true
+        default: 'unimrcp-blue-Apr-23 1.logs'
+      output_name:
+        description: 'Output name for the report'
+        required: false
+        default: 'mrcp-report'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Build report
+      run: |
+        python3 build_report.py "${{ github.event.inputs.log_file }}"
+    
+    - name: Upload report artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ github.event.inputs.output_name }}
+        path: |
+          summary.json
+          report.html
+        retention-days: 30 
