@@ -89,7 +89,7 @@ def main():
 
     # --- Compute extra stats for HTML ---
     import json
-    with open('summary.json', 'r') as f:
+    with open('summary.json', 'r', encoding='utf-8') as f:
         summary = json.load(f)
     tts_sessions = 0
     asr_sessions = 0
@@ -110,8 +110,8 @@ def main():
         'tts_sessions': tts_sessions,
         'asr_sessions': asr_sessions
     }
-    with open('summary.json', 'w') as f:
-        json.dump(summary, f, indent=2)
+    with open('summary.json', 'w', encoding='utf-8', newline='') as f:
+        json.dump(summary, f, indent=2, ensure_ascii=False)
     
     # Update HTML report to a temp file
     print("📊 Updating HTML report...")
