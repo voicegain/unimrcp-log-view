@@ -3,7 +3,6 @@
 Update HTML report with JSON data
 WARNING: Do NOT delete the HTML template file without explicit user confirmation!
 """
-
 import json
 import re
 import argparse
@@ -12,7 +11,7 @@ def update_html_with_json(json_data, html_file="report.html"):
     """Update the HTML file with new JSON data."""
     
     # Read the current HTML file
-    with open(html_file, 'r') as f:
+    with open(html_file, 'r', encoding='utf-8', errors='replace') as f:
         html_content = f.read()
     
     # Find the const data = ... section and replace it
@@ -23,8 +22,8 @@ def update_html_with_json(json_data, html_file="report.html"):
     new_html = re.sub(pattern, replacement, html_content, flags=re.DOTALL)
     
     # Write the updated HTML file
-    with open(html_file, 'w') as f:
-        f.write(new_html)
+    with open(html_file, 'w', encoding='utf-8', newline='') as f:
+        f.write(html_content)
     
     print(f"Updated {html_file} with new data")
 
@@ -34,7 +33,7 @@ def main():
     args = parser.parse_args()
 
     # Read the JSON data
-    with open('summary.json', 'r') as f:
+    with open('summary.json', 'r', encoding='utf-8') as f:
         data = json.load(f)
     
     # Create the HTML report with proper JavaScript escaping
@@ -742,7 +741,7 @@ def main():
 </html>'''
 
     # Write the HTML file
-    with open(html_file, 'w') as f:
+    with open(html_file, 'w', encoding='utf-8', newline='') as f:
         f.write(html_content)
     
     print(f"Created {html_file} with clean data")
