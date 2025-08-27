@@ -43,13 +43,13 @@ except ImportError:
 # Load SUCCESS_CODES from config if available
 SUCCESS_CODES = {0, 4, 5}
 if os.path.exists('success_codes.yaml') and yaml:
-    with open('success_codes.yaml', 'r') as f:
+    with open('success_codes.yaml', 'r', encoding='utf-8', errors='replace') as f:
         config = yaml.safe_load(f)
         if 'success_codes' in config:
             SUCCESS_CODES = set(config['success_codes'])
 elif os.path.exists('success_codes.json'):
     import json as _json
-    with open('success_codes.json', 'r') as f:
+    with open('success_codes.json', 'r', encoding='utf-8') as f:
         config = _json.load(f)
         if 'success_codes' in config:
             SUCCESS_CODES = set(config['success_codes'])
@@ -674,7 +674,7 @@ def parse_log(path: Path) -> List[SIPSession]:
     current_timestamp = None
     current_lines: List[str] = []
 
-    with path.open("r", errors="ignore") as fh:
+    with path.open("r", encoding="utf-8", errors="replace") as fh:
         for line in fh:
             line = line.rstrip("\r\n").rstrip(",")
 
@@ -1117,7 +1117,7 @@ def parse_log(path: Path) -> List[SIPSession]:
 
     # --- NEW: Ensure every unique Call-ID from anywhere in the log is included as a SIPSession ---
     all_call_ids = set(sip_sessions.keys())
-    with path.open("r", errors="ignore") as fh:
+    with path.open("r", encoding="utf-8", errors="replace") as fh:
         for line in fh:
             call_id_match = _CALL_ID_RE.search(line)
             if call_id_match:
@@ -1187,7 +1187,7 @@ def main():
 
     json_text = json.dumps(output, indent=2)
     if args.out:
-        args.out.write_text(json_text)
+        args.out.write_text(json_text, encoding='utf-8')
         print(f"Wrote {args.out}")
     else:
         print(json_text)
