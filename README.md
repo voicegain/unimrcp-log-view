@@ -11,7 +11,6 @@ A tool to parse UniMRCP logs and generate interactive HTML reports for analyzing
 - System configuration details
 
 **Never commit log files to version control!** The `.gitignore` file is configured to exclude:
-- Files with "blue" in the name (e.g., `unimrcp-blue`)
 - All `.log`, `.CSV`, and `.csv` files
 - Generated JSON files
 
@@ -19,9 +18,9 @@ A tool to parse UniMRCP logs and generate interactive HTML reports for analyzing
 
 - **Session Detection**: Automatically identifies SIP sessions with MRCP activity
 - **MRCP Analysis**: Parses MRCP messages, grammar definitions, and NLSML results
-- **Interactive Reports**: Generates beautiful HTML reports with collapsible sections
+- **Interactive Reports**: Generates  HTML reports with collapsible sections
 - **Multiple Log Formats**: Supports various UniMRCP log formats
-- **Session Health**: Provides completion rates and session statistics
+- **Session Health**: Provides session statistics
 
 ## Quick Start
 
@@ -44,18 +43,19 @@ cd mrcp-log-analyzer
 
 #### Option 1: Using the Build Script (Recommended)
 
-# absolute path example
-python3 /full/path/to/unimrcp-log-view/build_report.py "/path/to/logfile.csv"
+**If you are inside the project directory:**
+```bash
+cd /path/to/MRCP\ Log\ Analyzer
+python3 build_report.py "/path/to/your_log_file.log"
+```
 
-# or, if you’re already inside the repo
-cd /full/path/to/unimrcp-log-view
-python3 build_report.py "/path/to/logfile.csv"
+**If you are outside the project directory:**
+```bash
+python3 /full/path/to/MRCP\ Log\ Analyzer/build_report.py "/path/to/your_log_file.log"
 ```
 
 - Output files (`summary.json`, `report.html`) will be created in your current working directory unless otherwise specified.
 - For best results, it is recommended to run the script from within the project directory.
-# Then open http://localhost:8000/report.html in your browser
-
 
 #### Option 2: Using Make (Even Easier)
 
@@ -88,21 +88,7 @@ python3 /full/path/to/MRCP\ Log\ Analyzer/update_html.py
 make -C /full/path/to/MRCP\ Log\ Analyzer serve
 ```
 
-## Examples
 
-### Test with included sample logs:
-
-```bash
-# Test with original log (5 sessions)
-make test-original
-```
-
-### Custom log file:
-
-```bash
-# Your own log file
-make build LOG="my_unimrcp_log.log"
-```
 
 > **Note:** Never include or reference confidential logs in documentation, tests, or version control. Always use generic or anonymized sample logs for examples.
 
